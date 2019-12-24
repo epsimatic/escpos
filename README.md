@@ -60,6 +60,7 @@ func main() {
 		log.Fatalf("Print init failed: %v", err)
 	}
 	defer p.End()
+    p.Init()
 
 	println("Printer opened")
 

@@ -264,20 +264,16 @@ func (p *Printer) Pulse() {
 	p.w.Write([]byte("\x1Bp\x02"))
 }
 
+type Alignment int
+
+const (
+	AlignLeft Alignment = 0
+	AlignCenter Alignment = 1
+	AlignRight Alignment = 2
+)
 // SetAlign sets the alignment state and sends it to the printer.
-func (p *Printer) SetAlign(align string) {
-	a := 0
-	switch align {
-	case "left":
-		a = 0
-	case "center":
-		a = 1
-	case "right":
-		a = 2
-	default:
-		log.Printf("Invalid alignment: %s\n", align)
-	}
-	p.w.Write([]byte(fmt.Sprintf("\x1Ba%c", a)))
+func (p *Printer) SetAlign(align Alignment) {
+	p.w.Write([]byte(fmt.Sprintf("\x1Ba%c", align)))
 
 }
 

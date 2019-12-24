@@ -10,8 +10,8 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/cloudinn/escpos"
-	"github.com/cloudinn/escpos/raster"
+	"github.com/epsimatic/escpos"
+	"github.com/epsimatic/escpos/raster"
 )
 
 var (
@@ -49,7 +49,10 @@ func main() {
 	defer f.Close()
 	log.Print(*lpDev, " open.")
 
-	ep := escpos.New(f)
+	ep, err := escpos.NewPrinter(f)
+	if err != nil {
+		panic(err)
+	}
 
 	ep.Init()
 

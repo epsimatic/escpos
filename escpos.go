@@ -24,17 +24,17 @@ import (
 	"github.com/nfnt/resize"
 	"golang.org/x/image/font"
 
-	"github.com/cloudinn/escpos/raster"
+	"github.com/epsimatic/escpos/raster"
 )
 
 var (
-	dpi        = flag.Float64("dpi", 50, "screen resolution in Dots Per Inch")
-	fontfile   = flag.String("fontfile", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", "filename of the ttf font")
-	hinting    = flag.String("hinting", "none", "none | full")
-	size       = flag.Float64("size", 30, "font size in points")
-	spacing    = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
-	wonb       = flag.Bool("whiteonblack", true, "white text on a black background")
-	imageHight = flag.Int("imagehight", 38, "define image hight to be printed")
+	dpi         = flag.Float64("dpi", 50, "screen resolution in Dots Per Inch")
+	fontFile    = flag.String("fontFile", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", "filename of the ttf font")
+	hinting     = flag.String("hinting", "none", "none | full")
+	size        = flag.Float64("size", 30, "font size in points")
+	spacing     = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
+	wOnB        = flag.Bool("whiteonblack", true, "white text on a black background")
+	imageHeight = flag.Int("imagehight", 38, "define image hight to be printed")
 )
 
 // Printer wraps sending ESC-POS commands to a io.Writer.
@@ -48,7 +48,7 @@ type Printer struct {
 	// state toggles ESC[char]
 	underline  byte
 	emphasize  byte
-	upsidedown byte
+	upsideDown byte
 	rotate     byte
 
 	// state toggles GS[char]
@@ -79,7 +79,7 @@ func (p *Printer) Reset() {
 
 	p.underline = 0
 	p.emphasize = 0
-	p.upsidedown = 0
+	p.upsideDown = 0
 	p.rotate = 0
 
 	p.reverse = 0
@@ -146,7 +146,7 @@ func (p *Printer) SetFont(font string) {
 	case "C":
 		f = 2
 	default:
-		log.Println("Invalid font: '%s', defaulting to 'A'", font)
+		log.Printf("Invalid font: '%s', defaulting to 'A'\n", font)
 		f = 0
 	}
 
@@ -166,7 +166,7 @@ func (p *Printer) SetFontSize(width, height byte) {
 		p.width, p.height = width, height
 		p.SendFontSize()
 	} else {
-		log.Println("Invalid font size passed: %d x %d", width, height)
+		log.Printf("Invalid font size passed: %d x %d\n", width, height)
 	}
 }
 
@@ -181,9 +181,9 @@ func (p *Printer) SendEmphasize() {
 
 }
 
-// SendUpsidedown sends the upsidedown command to the printer.
-func (p *Printer) SendUpsidedown() {
-	p.w.Write([]byte(fmt.Sprintf("\x1B{%c", p.upsidedown)))
+// SendUpsideDown sends the upsideDown command to the printer.
+func (p *Printer) SendUpsideDown() {
+	p.w.Write([]byte(fmt.Sprintf("\x1B{%c", p.upsideDown)))
 }
 
 // SendRotate sends the rotate command to the printer.
@@ -224,10 +224,10 @@ func (p *Printer) SetEmphasize(u byte) {
 	p.SendEmphasize()
 }
 
-// SetUpsidedown sets the upsidedown state and sends it to the printer.
-func (p *Printer) SetUpsidedown(v byte) {
-	p.upsidedown = v
-	p.SendUpsidedown()
+// SetUpsideDown sets the upsideDown state and sends it to the printer.
+func (p *Printer) SetUpsideDown(v byte) {
+	p.upsideDown = v
+	p.SendUpsideDown()
 }
 
 // SetRotate sets the rotate state and sends it to the printer.
@@ -265,7 +265,7 @@ func (p *Printer) SetAlign(align string) {
 	case "right":
 		a = 2
 	default:
-		log.Println("Invalid alignment: %s", align)
+		log.Printf("Invalid alignment: %s\n", align)
 	}
 	p.w.Write([]byte(fmt.Sprintf("\x1Ba%c", a)))
 
@@ -297,7 +297,7 @@ func (p *Printer) SetLang(lang string) {
 	case "no":
 		l = 9
 	default:
-		log.Println("Invalid language: %s", lang)
+		log.Printf("Invalid language: %s\n", lang)
 	}
 
 	p.w.Write([]byte(fmt.Sprintf("\x1BR%c", l)))
@@ -342,8 +342,8 @@ func (p *Printer) Text(params map[string]string, text string) error {
 	}
 
 	// set font
-	if font, ok := params["font"]; ok {
-		p.SetFont(strings.ToUpper(font[5:6]))
+	if fnt, ok := params["font"]; ok {
+		p.SetFont(strings.ToUpper(fnt[5:6]))
 	}
 
 	// do dw (double font width)
@@ -438,7 +438,7 @@ func (p *Printer) Feed(params map[string]string) error {
 	p.SendSmooth()
 	p.SendReverse()
 	p.SendUnderline()
-	p.SendUpsidedown()
+	p.SendUpsideDown()
 	p.SendFontSize()
 	p.SendUnderline()
 
@@ -647,7 +647,7 @@ func (p *Printer) PrintImage(imgPath string) error {
 
 //SetWhiteOnBlack sets the background for the image to white for true or black for false
 func (p *Printer) SetWhiteOnBlack(wonbVal bool) {
-	*wonb = wonbVal
+	*wOnB = wonbVal
 }
 
 //SetFontSizePoint sets font size in points for some selected font
@@ -660,9 +660,9 @@ func (p *Printer) SetDPI(resolution float64) {
 	*dpi = resolution
 }
 
-//SetFontFile to choose a certien font to print the image with
+//SetFontFile to choose a certain font to print the image with
 func (p *Printer) SetFontFile(filepath string) {
-	*fontfile = filepath
+	*fontFile = filepath
 }
 
 //SetHinting sets hinting
@@ -675,15 +675,15 @@ func (p *Printer) SetSpacing(spacingVal float64) {
 	*spacing = spacingVal
 }
 
-func (p *Printer) SetImageHight(hight int) {
-	*imageHight = hight
+func (p *Printer) SetImageHeight(height int) {
+	*imageHeight = height
 }
 
 //PrintTextImage takes a string convert it to an image and print it
 func (p *Printer) PrintTextImage(text string) error {
 	// flag.Parse()
 	// Read the font data.
-	fontBytes, err := ioutil.ReadFile(*fontfile)
+	fontBytes, err := ioutil.ReadFile(*fontFile)
 	if err != nil {
 		return err
 	}
@@ -695,11 +695,11 @@ func (p *Printer) PrintTextImage(text string) error {
 	// Initialize the context.
 	fg, bg := image.Black, image.White
 	ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
-	if *wonb {
+	if *wOnB {
 		fg, bg = image.White, image.Black
 		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
 	}
-	rgba := image.NewRGBA(image.Rect(0, 0, 760, *imageHight))
+	rgba := image.NewRGBA(image.Rect(0, 0, 760, *imageHeight))
 	draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
 	c := freetype.NewContext()
 	c.SetDPI(*dpi)
@@ -758,7 +758,7 @@ func (p *Printer) PrintTextImage(text string) error {
 // if false will print text white background black
 // return slice bytes of raster image with width and height
 func (p *Printer) TextToRaster(text string, fontSize float64, wb bool) (data []byte, width int, height int, err error) {
-	fontBytes, err := ioutil.ReadFile(*fontfile)
+	fontBytes, err := ioutil.ReadFile(*fontFile)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -774,7 +774,7 @@ func (p *Printer) TextToRaster(text string, fontSize float64, wb bool) (data []b
 		fg, bg = image.White, image.Black
 		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
 	}
-	rgba := image.NewRGBA(image.Rect(0, 0, 760, *imageHight))
+	rgba := image.NewRGBA(image.Rect(0, 0, 760, *imageHeight))
 	draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
 	c := freetype.NewContext()
 	c.SetDPI(*dpi)

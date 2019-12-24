@@ -5,7 +5,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/cloudinn/escpos"
+	"github.com/epsimatic/escpos"
 )
 
 //NewConnection creats a connection with a usb printer or a network printer and

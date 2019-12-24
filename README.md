@@ -12,13 +12,14 @@ point-of-sale (POS) system.
 
 Install the package via the following:
 
-    go get -u github.com/cloudinn/escpos
+    go get -u github.com/epsimatic/escpos
 
 ## Example epos-server ##
 
-An example EPOS server implementation is available in the [cmd/epos-server][3]
-subdirectory of this project. This example server is more or less compatible
-with [Epson TM-Intelligent][4] printers and print server implementations.
+An example EPOS server implementation is available in [original repository](https://github.com/CloudInn/escpos/tree/master/cmd/epos-server).
+That example server is more or less compatible with [Epson TM-Intelligent][4] printers and print server implementations.
+
+Please note that it requires `gokogiri`, `libxml` and `cgo` to build
 
 ## Usage ##
 
@@ -31,7 +32,7 @@ import (
     "bufio"
     "os"
 
-    "github.com/cloudinn/escpos"
+    "github.com/epsimatic/escpos"
 )
 
 func main() {
@@ -42,38 +43,41 @@ func main() {
     defer f.Close()
 
     w := bufio.NewWriter(f)
-    p := escpos.New(w)
+    p, err := escpos.NewPrinter(w)
+    if err != nil {
+        panic(err)
+    }
 
     p.Init()
     p.SetSmooth(1)
     p.SetFontSize(2, 3)
     p.SetFont("A")
-    p.Write("test ")
+    p.WriteString("test ")
     p.SetFont("B")
-    p.Write("test2 ")
+    p.WriteString("test2 ")
     p.SetFont("C")
-    p.Write("test3 ")
+    p.WriteString("test3 ")
     p.Formfeed()
 
     p.SetFont("B")
     p.SetFontSize(1, 1)
 
     p.SetEmphasize(1)
-    p.Write("halle")
+    p.WriteString("halle")
     p.Formfeed()
 
     p.SetUnderline(1)
     p.SetFontSize(4, 4)
-    p.Write("halle")
+    p.WriteString("halle")
 
     p.SetReverse(1)
     p.SetFontSize(2, 4)
-    p.Write("halle")
+    p.WriteString("halle")
     p.Formfeed()
 
     p.SetFont("C")
     p.SetFontSize(8, 8)
-    p.Write("halle")
+    p.WriteString("halle")
     p.FormfeedN(5)
 
     p.Cut()
@@ -92,10 +96,10 @@ The Imported font inside the code is a system font called DejaVuSansMono-Bold.tt
 
 ## Credits
 - Repo forked from [kenshaw](https://github.com/kenshaw/escpos) escpos
+- Repo forked from [CloudInn](https://github.com/CloudInn/escpos/tree/master/cmd/epos-server) escpos
 - Some of the work in this repo is based on [python-escpos](https://github.com/python-escpos/python-escpos) and [escpos-php](https://github.com/mike42/escpos-php) packages
 
 
 [1]: http://www.golang.org/project
 [2]: https://en.wikipedia.org/wiki/ESC/P
-[3]: cmd/epos-server
 [4]: https://c4b.epson-biz.com

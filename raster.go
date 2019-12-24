@@ -15,7 +15,7 @@ const (
 // Function made based on mike42 python-escpos package
 func intLowHigh(inpNumber int, outBytes int) []byte {
 
-	maxInput := (256 << (uint((outBytes * 8)) - 1))
+	maxInput := 256 << (uint(outBytes*8) - 1)
 
 	if outBytes < 1 || outBytes > 4 {
 		log.Println("Can only output 1-4 bytes")
@@ -47,7 +47,7 @@ func (p *Printer) Raster(width, height, lineWidth int, imgBw []byte, printingTyp
 
 		fullImage := append(header, imgBw...)
 
-		p.Write(fullImage)
+		p.Raw(fullImage)
 
 	} else if printingType == "graphics" {
 		for l := 0; l < height; {
@@ -58,7 +58,7 @@ func (p *Printer) Raster(width, height, lineWidth int, imgBw []byte, printingTyp
 
 			f112P := 10 + lines*lineWidth
 
-			p.Write([]byte{
+			p.Raw([]byte{
 				0x1d, 0x38, 0x4c, // GS 8 L, Store the graphics data in the print buffer -- (raster format), p. 252
 				byte(f112P), byte(f112P >> 8), byte(f112P >> 16), byte(f112P >> 24), // p1 p2 p3 p4
 				0x30, 0x70, 0x30, // function 112
@@ -69,7 +69,7 @@ func (p *Printer) Raster(width, height, lineWidth int, imgBw []byte, printingTyp
 			})
 
 			// write line
-			p.Write(imgBw[l*lineWidth : (l+lines)*lineWidth])
+			p.Raw(imgBw[l*lineWidth : (l+lines)*lineWidth])
 
 			// flush
 			//
@@ -77,7 +77,7 @@ func (p *Printer) Raster(width, height, lineWidth int, imgBw []byte, printingTyp
 			//   p. 241 Moves print position to the left side of the
 			//   print area after printing of graphics data is
 			//   completed
-			p.Write([]byte{
+			p.Raw([]byte{
 				0x1d, 0x28, 0x4c, 0x02, 0x00, 0x30,
 				0x32, //  Fn 50
 			})

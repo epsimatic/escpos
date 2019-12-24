@@ -30,60 +30,71 @@ package main
 
 import (
     "bufio"
+	"log"
     "os"
 
     "github.com/epsimatic/escpos"
 )
 
 func main() {
-    f, err := os.Open("/dev/usb/lp0")
-    if err != nil {
-        panic(err)
-    }
-    defer f.Close()
+	f, err := os.OpenFile("/dev/usb/lp0", os.O_WRONLY, 0644)
+	println("Port opened")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Fatalf("Printer close failed: %v", err)
+		}
+	}()
 
-    w := bufio.NewWriter(f)
-    p, err := escpos.NewPrinter(w)
-    if err != nil {
-        panic(err)
-    }
+	w := bufio.NewWriter(f)
+	defer func() {
+		if err := w.Flush(); err != nil {
+			log.Fatalf("Print buffer flush failed: %v", err)
+		}
+	}()
 
-    p.Init()
+	p, err := escpos.NewPrinter(w)
+	if err != nil {
+		log.Fatalf("Print init failed: %v", err)
+	}
+	defer p.End()
+
+	println("Printer opened")
+
     p.SetSmooth(1)
     p.SetFontSize(2, 3)
     p.SetFont("A")
-    p.WriteString("test ")
+    p.WriteLn("test ")
     p.SetFont("B")
-    p.WriteString("test2 ")
+    p.WriteLn("test2 ")
     p.SetFont("C")
-    p.WriteString("test3 ")
+    p.WriteLn("test3 ")
     p.Formfeed()
 
     p.SetFont("B")
     p.SetFontSize(1, 1)
 
     p.SetEmphasize(1)
-    p.WriteString("halle")
+    p.WriteLn("halle")
     p.Formfeed()
 
     p.SetUnderline(1)
     p.SetFontSize(4, 4)
-    p.WriteString("halle")
+    p.WriteLn("halle")
 
     p.SetReverse(1)
     p.SetFontSize(2, 4)
-    p.WriteString("halle")
+    p.WriteLn("halle")
     p.Formfeed()
 
     p.SetFont("C")
     p.SetFontSize(8, 8)
-    p.WriteString("halle")
+    p.WriteLn("halle")
     p.FormfeedN(5)
 
     p.Cut()
-    p.End()
-
-    w.Flush()
 }
 ```
 

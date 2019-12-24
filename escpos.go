@@ -28,13 +28,13 @@ import (
 )
 
 var (
-	dpi         = flag.Float64("dpi", 50, "screen resolution in Dots Per Inch")
-	fontFile    = flag.String("fontFile", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", "filename of the ttf font")
-	hinting     = flag.String("hinting", "none", "none | full")
-	size        = flag.Float64("size", 30, "font size in points")
-	spacing     = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
-	wOnB        = flag.Bool("whiteonblack", true, "white text on a black background")
-	imageHeight = flag.Int("imagehight", 38, "define image hight to be printed")
+	dpi          = flag.Float64("dpi", 50, "screen resolution in Dots Per Inch")
+	fontFile     = flag.String("fontFile", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", "filename of the ttf font")
+	hinting      = flag.String("hinting", "none", "none | full")
+	size         = flag.Float64("size", 30, "font size in points")
+	spacing      = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
+	whiteOnBlack = flag.Bool("whiteonblack", true, "white text on a black background")
+	imageHeight  = flag.Int("imagehight", 38, "define image hight to be printed")
 )
 
 // Printer wraps sending ESC-POS commands to a io.Writer.
@@ -86,18 +86,29 @@ func (p *Printer) Reset() {
 	p.smooth = 0
 }
 
-// Write writes buf to printer.
-func (p *Printer) Write(buf []byte) (int, error) {
+// WriteData writes buf to printer.
+func (p *Printer) Raw(buf []byte) (int, error) {
 	return p.w.Write(buf)
 }
 
-// WriteString writes a string to the printer.
-func (p *Printer) WriteString(s string) (int, error) {
-	p.PrintTextImage(s)
+// Write writes string to printer without Line Feed, so it's not printed out instantly
+func (p *Printer) Write(str string) (int, error) {
+	return p.w.Write([]byte(str))
+}
+
+// Write writes string to printer.
+func (p *Printer) WriteLn(str string) (int, error) {
+	return p.w.Write([]byte(str + "\n"))
+}
+
+// WriteRenderedString renders string as image and outputs it to the printer.
+func (p *Printer) WriteRenderedString(str string) (int, error) {
+	p.PrintTextImage(str)
 	return p.w.Write([]byte(""))
 }
 
-// Init resets the state of the printer, and writes the initialize code.
+// Init resets the state of the printer:
+// clears the data in the print buffer and resets the device mode to that in effect when power was turned on.
 func (p *Printer) Init() {
 	p.Reset()
 	p.w.Write([]byte("\x1B@"))
@@ -106,7 +117,6 @@ func (p *Printer) Init() {
 // End terminates the printer session.
 func (p *Printer) End() {
 	p.w.Write([]byte("\xFA"))
-
 }
 
 // Cut writes the cut code to the printer.
@@ -204,12 +214,12 @@ func (p *Printer) SendSmooth() {
 
 // SendMoveX sends the move x command to the printer.
 func (p *Printer) SendMoveX(x uint16) {
-	p.Write([]byte{0x1b, 0x24, byte(x % 256), byte(x / 256)})
+	p.Raw([]byte{0x1b, 0x24, byte(x % 256), byte(x / 256)})
 }
 
 // SendMoveY sends the move y command to the printer.
 func (p *Printer) SendMoveY(y uint16) {
-	p.Write([]byte{0x1d, 0x24, byte(y % 256), byte(y / 256)})
+	p.Raw([]byte{0x1d, 0x24, byte(y % 256), byte(y / 256)})
 }
 
 // SetUnderline sets the underline state and sends it to the printer.
@@ -398,7 +408,7 @@ func (p *Printer) Text(params map[string]string, text string) error {
 
 	// do text replace, then write data
 	if len(text) > 0 {
-		p.WriteString(textReplacer.Replace(text))
+		p.Write(textReplacer.Replace(text))
 	}
 
 	return nil
@@ -495,7 +505,7 @@ func (p *Printer) gSend(m byte, fn byte, data []byte) {
 	l := len(data) + 2
 
 	p.w.Write([]byte("\x1b(L"))
-	p.Write([]byte{byte(l % 256), byte(l / 256), m, fn})
+	p.Raw([]byte{byte(l % 256), byte(l / 256), m, fn})
 	p.w.Write([]byte(data))
 
 }
@@ -646,8 +656,8 @@ func (p *Printer) PrintImage(imgPath string) error {
 }
 
 //SetWhiteOnBlack sets the background for the image to white for true or black for false
-func (p *Printer) SetWhiteOnBlack(wonbVal bool) {
-	*wOnB = wonbVal
+func (p *Printer) SetWhiteOnBlack(newWhiteOnBlack bool) {
+	*whiteOnBlack = newWhiteOnBlack
 }
 
 //SetFontSizePoint sets font size in points for some selected font
@@ -661,8 +671,8 @@ func (p *Printer) SetDPI(resolution float64) {
 }
 
 //SetFontFile to choose a certain font to print the image with
-func (p *Printer) SetFontFile(filepath string) {
-	*fontFile = filepath
+func (p *Printer) SetFontFile(filePath string) {
+	*fontFile = filePath
 }
 
 //SetHinting sets hinting
@@ -695,7 +705,7 @@ func (p *Printer) PrintTextImage(text string) error {
 	// Initialize the context.
 	fg, bg := image.Black, image.White
 	ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
-	if *wOnB {
+	if *whiteOnBlack {
 		fg, bg = image.White, image.Black
 		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
 	}
